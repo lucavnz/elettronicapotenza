@@ -1,0 +1,80 @@
+====================================================================================
+VERIFICA ANALITICA E AUDIT CRITICO DI 35.pdf (Pahlevaninezhad et al., IEEE TPEL 2012)
+====================================================================================
+
+[1] EQUAZIONI MODO I - III: Eqs. (4)-(11)
+  IPA (Eq.20) = 3.392 A, I_LAUX_rms = 1.958 A (Table II: 2A rms -> OK)
+  Con Cso=650pF, LM=1.5mH: t1 = 99.18 ns, t2 = 153.30 ns
+  Eq.(4)  is(t1) = 8.489 mA
+  Eq.(8)  PAPER is(t2) = -0.854 A  <-- ERRORE! Corrente NEGATIVA in conduzione diretta!
+          (Causa: Eq.(6) integra da t0 anziche t1; Eq.(7) pone v_AB(t1)=0 anziche k(Vo+2Vd))
+  CORRETTA is(t2)      = +0.332 A  (strettamente positiva)
+
+[2] EQUAZIONI MODO IV: Eqs. (13)-(14)
+  omega_r = 1/sqrt(2*Cso*Lseq) = 8.074e+06 rad/s (fr = 1.29 MHz)
+  Errore 1 (Eq.13-14): argomento sin/cos = (t/sqrt(2*Cso*Lseq) - t3) sottrae secondi a radianti!
+  Errore 2 (Eq.14): coefficiente Vdc / (Lseq*sqrt(2*Cso*Lseq)) = 2.737e+14 A/s^2 (10^14 A!!)
+                    invece di Vdc*sqrt(2*Cso*Lseq)/Lseq = 4.20 A (ha diviso invece di moltiplicare!)
+  Errore 3 (Eq.14): manca (-1) nel coseno => is(t3) != Ip!
+
+[3] GUADAGNO STAZIONARIO: Eqs. (16)-(18) E FIG. 7
+  Eq.(16) PAPER:    I = (2/Ts) * ton^2 * (Vdc/(k*Vo)) * (Vdc-k*Vo)/Lseq  <-- ERRORE FATTORE 2!
+  Eq.(16) CORRETTA: I = (1/Ts) * ton^2 * (Vdc/(k*Vo)) * (Vdc-k*Vo)/Lseq
+  Eq.(18) PAPER:    4*Lseq / (Ts * Re * ton^2)  <-- ERRORE DIMENSIONALE! Unita [1/s^2], Ts a denominatore!
+          Valore numerico letterale Eq.(18) a psi=90°, Re=30Ω: 3.863002e-06  (praticamente ZERO!)
+  Eq.(18) CORRETTA (DCM): gv = 2 / (k + sqrt(k^2 + 4*Ts*Lseq / (Re * ton^2)))
+  Confronto a psi=90°, Re=30Ω (td=0):
+    - Fig. 7 del paper (curva plottata, C = Lseq*fs = 2.60Ω): gv(90°, 30Ω) = 0.870, gv(171°, 30Ω) = 1.054
+    - Formula DCM corretta (C = 4*Lseq*fs = 10.38Ω):          gv(90°, 30Ω) = 0.597 [DCM]
+    - Modello esatto DCM+CCM (fisico):                        gv(90°, 30Ω) = 0.597 [DCM], gv(171°, 30Ω) = 0.740 [CCM]
+    => Fig. 7 e' stata plottata con una costante 4x piu' piccola del vero (equivalente a psi/180 invece di psi/360)!
+
+[4] PROGETTO INDUTTORI AUSILIARI: Eqs. (20)-(24)
+  Combinando Eq.(20), (23), (24): td = Ts/8 = 568.2 ns (fisso al 12.5% del periodo = 45°!)
+  Per Laux=67uH @ 220kHz, Eq.(23) implica Cso = 2.41 nF (circa 3.5x piu' grande di Coss reale)
+
+[5] PROGETTO INDUTTORE SERIE IN BCM: Fig. 9 e Eqs. (25)-(26)
+  Fig. 9: etichetta picco primario come 2*k*Io anziche 2*Io/k (inversione del rapporto spire k=Np/Ns)
+  Eq.(25): unita [H*s] per fattore spurio Ts/2, e manca k al denominatore!
+  Eq.(26) PAPER (segno + errato e fattore Ts/64): Lseq = 3.48 uH
+  Eq.(26) CORRETTA ideale (Vo=300V, Po=3kW):      Lseq = 8.92 uH
+  Eq.(26) CORRETTA con Vd=1.5V:                   Lseq = 8.85 uH
+  Tabella II (prototipo):                         Lseq = 11.80 uH  (NON coincide ne' con Eq.26 ne' con BCM a 3kW!)
+
+[6] POTENZA MASSIMA EROGABILE CON Lseq=11.8uH (Tabella II) SU RANGE BATTERIA 235-431V (Tabella I)
+   Vo(V) |  Po_BCM(W) |  Po_max_ideal(D=1) |  Po_max_prac(td=165ns,Vd=1.5V) |   Regime @ 3kW
+  --------------------------------------------------------------------------------------
+     235 |     1917.8 |             2884.9 |                         2840.3 |    IMPOSSIBILE
+     270 |     2157.8 |             2965.0 |                         2909.5 |    IMPOSSIBILE
+     300 |     2268.3 |             2918.5 |                         2853.0 |    IMPOSSIBILE
+     330 |     2265.9 |             2753.4 |                         2677.0 |    IMPOSSIBILE
+     355 |     2160.6 |             2516.6 |                         2430.5 |    IMPOSSIBILE
+     380 |     1946.6 |             2182.3 |                         2085.9 |    IMPOSSIBILE
+     400 |     1688.0 |             1840.0 |                         1734.9 |    IMPOSSIBILE
+     431 |     1116.0 |             1169.1 |                         1050.1 |    IMPOSSIBILE
+  => CON Lseq=11.8uH e Vdc=400V, il BCM si raggiunge gia' a 2268W (75% carico), NON a 3000W!
+  => A 3000W (Fig. 21) il convertitore e' in CCM profondo (contraddicendo il testo a p.2766)!
+  => A Vo=431V (estremo superiore Tabella I) la potenza massima fisica scende a soli ~1050W!
+
+[7] INDUTTANZA DI DISPERSIONE TRASFORMATORE: Eqs. (27)-(31)
+  Eqs.(27)-(28): errore tipografico H(rho^2) invece di [H(rho)]^2.
+  Eqs.(29)-(31): MANCA la lunghezza media della spira MLT [m] => unita [H/m] invece di [H]!
+
+[8] CONDENSATORE DI FILTRO Cf: Eq.(32) E FIG. 11
+  Eq.(32) Cf = Io/(8*fs*dVCf): CORRETTA in BCM! Con Cf=1uF, Io=10A => dVCf = 5.68 V (1.89%)
+  Fig. 11(a): etichetta picco i_Cf come Ip/k invece di k*Ip - Io (inversione di k e manca -Io).
+
+[9] INCONGRUENZE SPERIMENTALI NEGLI OSCILLOGRAMMI (Figs. 14-23)
+  1) Figs. 16-20 (Proposed 10%-85%, data 19/07/2011): il testo a p.2765 dichiara Vo=300VDC,
+     ma la traccia C3 (Output Diode Voltage, 100V/div, offset 0V) misura -356V (e ringing attorno
+     a -178V = -Vo/2), E il rapporto indipendente dalla sonda toff/ton ~ 0.31-0.34 dimostra
+     k*Vo/Vdc ~ 0.75 => Vo reale ~ 355V (con Vdc ~ 405-410V), NON 300V (che darebbe toff/ton = 0.56)!
+  2) Fig. 21 (Proposed 100%, data 18/07/2011): corrente i_s in CCM profondo (passa da -15A a +20A
+     senza intervallo a zero), smentendo ZCS sui MOSFET leading-leg e sui diodi d'uscita a pieno carico.
+  3) Fig. 14(a)-(b) (Conventional FB, LeCroy58.bmp / LeCroy48.bmp): frequenza misurata ~150 kHz
+     (3 cicli in 20us @ 2us/div) e Vdc ~ 320-355V, NON 220 kHz / 400V come dichiarato in Tabella I.
+  4) Fig. 15 (No-load): C1 segna 2.00 V/div (manca fattore sonda 100x => 200 V/div).
+  5) Fig. 22(b) (LeCroy41.bmp): onda quadra 50% duty (~286 kHz @ 1us/div) senza carico specificato.
+  6) Fig. 23 (Efficienza): etichetta asse Y troncata ('E ff ic ie n') e legenda mancante per 'Proposed'.
+  7) Tabella II omette CB, LM, td; Tabella IV chiama i diodi d'uscita 'D_PFC' (refuso da Tab. III);
+     Fig. 3 (D2,D3) vs Fig. 4 (D1,D4) in contraddizione sul semiperiodo positivo.

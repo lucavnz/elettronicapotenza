@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+._*
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# LTspice transient simulation outputs (regenerated automatically on Run or via scripts/run_all_simulations.py)
+ltspice/*.raw
+ltspice/*.op.raw
+ltspice/*.net
+ltspice/*.log
+ltspice/*.fft
+ltspice/*.imp
+
+# Temporary sweep scratch directories
+results/_tmp_*/
